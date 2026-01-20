@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東大日語會話授課檢核與教室活動參考網站</title>
+    
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入 React 和 Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- 引入字體 -->
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        .jp-font {
+            font-family: 'Zen Maru Gothic', sans-serif;
+        }
+        .dot-pattern {
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        /* 隱藏滾動條但保持功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+</head>
+<body class="bg-[#f3f0e9]">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- ICON COMPONENTS ---
+        const IconBase = ({ children, className, ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
+        );
+        const Zap = (p) => <IconBase {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></IconBase>;
+        const Mic = (p) => <IconBase {...p}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></IconBase>;
+        const Repeat = (p) => <IconBase {...p}><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></IconBase>;
+        const Users = (p) => <IconBase {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></IconBase>;
+        const PenTool = (p) => <IconBase {...p}><path d="m12 19 7-7 3 3-7 7-3-3z"></path><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="m2 2 7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></IconBase>;
+        const CheckCircle = (p) => <IconBase {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></IconBase>;
+        const ChevronRight = (p) => <IconBase {...p}><polyline points="9 18 15 12 9 6"></polyline></IconBase>;
+        const ArrowRight = (p) => <IconBase {...p}><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></IconBase>;
+        const ArrowLeft = (p) => <IconBase {...p}><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></IconBase>;
+        const School = (p) => <IconBase {...p}><path d="m4 6 8-4 8 4"></path><path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"></path><path d="M14 22v-4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"></path><path d="M18 5v17"></path><path d="M6 5v17"></path><circle cx="12" cy="9" r="2"></circle></IconBase>;
+        const GraduationCap = (p) => <IconBase {...p}><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></IconBase>;
+        const Clock = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></IconBase>;
+        const AlertCircle = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></IconBase>;
+        const PlayCircle = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></IconBase>;
+        const X = (p) => <IconBase {...p}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></IconBase>;
+        const List = (p) => <IconBase {...p}><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></IconBase>;
+        const Users2 = (p) => <IconBase {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></IconBase>;
+        const Box = (p) => <IconBase {...p}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></IconBase>;
+        const Lightbulb = (p) => <IconBase {...p}><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 9.5 6 4.65 4.65 0 0 0 8 11.5c0 1.3 1.09 2.2 2.91 2.5"></path></IconBase>;
+        const Puzzle = (p) => <IconBase {...p}><path d="M19.439 6.912a1 1 0 0 0-1.577.863V10c0 .553.448 1 1 1h2.233a1 1 0 0 0 .863-1.577l-1.519-2.511Z"></path><path d="M12 10V8a1 1 0 0 0-1-1H8.767a1 1 0 0 0-.863 1.577l1.519 2.511a1 1 0 0 0 1.577-.863Z"></path><path d="M20 16a1 1 0 0 0-1-1h-2.233a1 1 0 0 0-.863 1.577l1.519 2.511a1 1 0 0 0 1.577-.863V16Z"></path><path d="M10 16a1 1 0 0 0-1-1H6.767a1 1 0 0 0-.863 1.577l1.519 2.511a1 1 0 0 0 1.577-.863V16Z"></path><path d="M22 2h-2a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2H2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h20a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z"></path></IconBase>;
+        const Timer = (p) => <IconBase {...p}><line x1="10" y1="2" x2="14" y2="2"></line><line x1="12" y1="14" x2="15" y2="11"></line><circle cx="12" cy="14" r="8"></circle></IconBase>;
+        const MessageCircle = (p) => <IconBase {...p}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></IconBase>;
+        const RefreshCw = (p) => <IconBase {...p}><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></IconBase>;
+        const Gamepad2 = (p) => <IconBase {...p}><line x1="6" y1="11" x2="10" y2="11"></line><line x1="8" y1="9" x2="8" y2="13"></line><line x1="15" y1="12" x2="15.01" y2="12"></line><line x1="18" y1="10" x2="18.01" y2="10"></line><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.01.1-.017-.151A4 4 0 0 0 17.32 5z"></path></IconBase>;
+        const Sparkles = (p) => <IconBase {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3z"></path></IconBase>;
+        
+        // Helper Icons for the new modal
+        const RocketIcon = () => <span>🚀</span>;
+        const BoxIcon = () => <span>🎒</span>;
+        const GroupIcon = () => <span>👥</span>;
+
+        // --- GLOBAL DATA ---
+        const categories = [
+            { title: "一、單字配對", icon: <Zap className="w-5 h-5 text-yellow-500" />, description: "【拒絕死背】禁止單純念單字，必須建立直覺反應。", items: ["是否示範了「動詞搭配」？(不能只教「雨」，要教「下雨」。避免學生只背單字不會用。)", "是否進行了「圖片/實物反射」？(看圖 1 秒內說出單字，禁看課本。建立直覺反應。)", "是否讓學生用單字「造短語」？(教「好吃的」，學生要接「拉麵」。建立語感。)", "是否有跟學生強調該加濁音促音長音等部分？(糾正發音細節，避免台式日語腔調。)", "是否有在10~15分鐘內結束單字？(將重點放於會話口說，勿在單字講解花費過多時間。)"] },
+            { title: "二、漢字讀音與單句認讀", icon: <Mic className="w-5 h-5 text-cyan-400" />, description: "【拒絕默讀】結合漢字發音與句子情感，訓練開口勇氣。", items: ["是否測試了「長音/促音」與「音讀/訓讀」的發音準確度？(老師刻意唸錯讓學生抓，或確認學生發音正確。)", "是否進行了「漢字搶答」或辨識生活中的漢字？(如使用菜單、招牌等實物照片，增加課堂趣味。)", "是否進行了 Shadowing (跟讀法)？(老師唸完，學生模仿語調跟唸。不只是唸字，要模仿語氣。)", "是否要求句子「帶入情緒」？(生氣的句子要唸出生氣的感覺，悲傷的要悲傷。)", "是否遮住課本進行「回想復誦」？(看一眼句子，抬頭看著老師/同學講出來。)"] },
+            { title: "三、會話與文法 1", icon: <Repeat className="w-5 h-5 text-green-400" />, description: "【拒絕說教】文法解釋不超過 2 分鐘，重點是「換句話說」。", items: ["是否讓學生用「自己的真實情況」造句？(不要只唸課本例句，要講自己如：我昨天...。)", "是否進行了「Q&A 快速問答」？(老師問學生答，禁止思考超過 3 秒，訓練反射神經。)", "是否有請學生輪流回答習題的問題？(避免都是老師自己從頭講到尾，讓學生成為課堂主體。)", "是否每個學生都有聽懂對話中的意涵？(確認全班理解對話背後的語境與功能。)", "是否減少了老師的說話時間？(目標：學生開口時間 > 老師講解時間。)"] },
+            { title: "四、會話與文法 2", icon: <Users className="w-5 h-5 text-rose-400" />, description: "【拒絕照唸】蓋上課本，模擬真實場景，允許犯錯。", items: ["是否設定了具體「角色與情境」？(如：問路、點餐、自我介紹。讓練習有目標感。)", "是否要求學生「蓋上課本」進行對話？(依賴聽力與反應，模擬真實溝通狀況。)", "是否鼓勵學生「多講一句」？(除了回答 Yes/No，還要學會反問或延伸話題。)", "是否在對話結束後才糾錯？(過程中不打斷，保持對話流暢度與自信心。)", "是否讓學生互相對話 (Pair Work)？(不只是對老師說，要習慣聽不同同學的聲音。)"] },
+            { title: "五、讀解與仿寫練習", icon: <PenTool className="w-5 h-5 text-purple-400" />, description: "【拒絕翻譯】從短文中抓關鍵字，並模仿句型寫出自己的想法。", items: ["是否選用了「貼近生活」的短文？(如：SNS貼文、簡訊、公告、簡單新聞。)", "是否引導學生先抓出 5W1H？(先抓出誰、何時、哪裡，而非一開始就逐字翻譯。)", "是否進行了「換詞仿寫」？(保留句型結構，只換掉名詞/動詞，降低寫作門檻。)", "是否讓學生寫出 3 句以上的「連貫短文」？(如：自我介紹、週末計畫、讀後感想。)", "是否針對寫作內容給予「溝通性回饋」？(評價重點在於「日本人是否看得懂」，而非僅是改錯字。)"] }
+        ];
+
+        const activitiesDataP1 = [
+            {
+                title: "一、單字配對 教室活動庫",
+                color: "bg-amber-50 border-amber-200 text-amber-900", 
+                icon: <Zap className="w-6 h-6 text-amber-600" />,
+                activities: [
+                    { emoji: "🔗", name: "連連看大對抗", time: "5 分", desc: "投影片顯示左右兩列（左名詞、右動詞）。老師點名，學生口頭說出正確組合，老師操作滑鼠連線。", grouping: "需分組 (紅藍對抗)", groupSize: "分為兩大隊 (每隊約 5-8 人)", materials: "投影片 (製作兩列詞彙，如：左邊-飯/水，右邊-吃/喝)", steps: ["將全班分為紅、藍兩隊，請兩隊各派一名代表上台。「赤チーム、青チーム、代表は前へ！」", "老師顯示投影片上的左右兩列詞彙，確認大家都看得到後，大聲發號施令。「準備はいいですか？スタート！」", "兩隊代表輪流起立，大聲唸出正確的詞彙搭配（例如：吃飯）。「はい、答えをどうぞ！」", "學生回答正確後，老師給予肯定並加上鼓勵。「正解です！素晴らしい！」", "遊戲結束，結算分數。「優勝は赤チームです！拍手！」"] },
+                    { emoji: "🤫", name: "動作傳話", time: "10 分", desc: "讓第一位學生看投影片上的「動詞短語」(如：喝熱茶)，用動作傳給下一位，最後一位要說出答案。", grouping: "需分組", groupSize: "5-6 人一組 (全班分 2-3 組)", materials: "投影片 (準備 3-5 個動詞短語題目)、白紙 (計分用)", steps: ["請每組學生排成一直列，面向黑板。「一列に並んでください。」", "除了最後一位學生，其他人都不能回頭。「前を向いてください。振り返らないで！」", "老師給最後一位學生看題目（例如：打網球），並下令開始。「お題はこれです。スタート！」", "學生拍肩膀向前一位做動作，過程中嚴禁說話。「話してはいけませんよ。ジェスチャーだけ！」", "傳到最前一位學生，請他大聲說出日語答案。「はい、答えは何ですか？」"] },
+                    { emoji: "⚡", name: "投影片閃視反應", time: "5 分", desc: "投影片快速閃現「動詞文字」(如：吃)，學生要馬上喊出適合搭配的「名詞」(如：拉麵)。", grouping: "不需分組 (全班同時)", groupSize: "全班 10-16 人同時進行", materials: "投影片 (設定動畫效果，字卡出現 0.5-1 秒後消失)", steps: ["老師先用中文講解規則，確認大家都理解反向操作的邏輯。「ルールを説明します。動詞を見たら、名詞を言ってください。」", "播放投影片，字卡快速閃現。老師激勵大家：「速いですよ！集中して！」", "學生看到「飲みます」，全班大聲搶答「水」或「コーヒー」。「はい、何を？」", "節奏要快，訓練直覺反射，不給思考翻譯的時間。「次！次！止まらないで！」"] },
+                    { emoji: "🙆", name: "選邊站", time: "10 分", desc: "老師唸短句，投影片顯示兩個角落的圖案（圈/叉）。如果搭配錯誤，學生比出叉叉手勢或跑向叉叉區。", grouping: "不需分組", groupSize: "全班 10-16 人", materials: "投影片 (顯示 O 與 X 的區域示意圖)", steps: ["老師唸出一個短句，例如「吃飯用喝的？」。「ご飯を飲みます。マルですか？バツですか？」", "學生判斷搭配是否合理，用身體動作表達。「はい、動いてください！」", "合理的比圈 (或跑向左邊)，不合理的比叉 (或跑向右邊)。「３、２、１、ストップ！」", "選錯的學生暫時淘汰（或扣分）。「残念！座ってください。」"] },
+                    { emoji: "🔍", name: "大家來找碴", time: "10 分", desc: "投影片顯示一張豐富的場景圖。老師指定動作，學生要指出圖中哪裡有人在做這個動作。", grouping: "個人戰或兩人一組", groupSize: "1-2 人", materials: "投影片 (準備一張細節豐富的圖片，如餐廳、公園)", steps: ["投影片秀出一張大圖。「絵をよく見てください。」", "老師用日語描述一個動作。「水を飲んでいます。どこですか？」", "學生要在圖片中找到做該動作的人，並指出來。「指で指してください。」", "進階玩法，改由老師指人，學生說出動作。「じゃあ、この人は何をしていますか？」"] },
+                    { emoji: "✌️", name: "二選一", time: "5 分", desc: "老師問：「雨？」投影片顯示兩個選項。甲：下(降ります)；乙：開(開けます)。學生舉手比 1 或 2 搶答。", grouping: "不需分組", groupSize: "全班 10-16 人", materials: "投影片 (每頁兩個大選項)", steps: ["老師唸出題目單字 (如：Rain / 雨)。「雨！」", "投影片顯示選項 1.降ります 2.開けます。老師喊口令：「１番？２番？せーの！」", "學生同時舉手比 1 或 2。老師確認：「はい、２番の人、座ってください。」", "答錯的坐下，看最後誰是倖存者。「残った人、頑張って！」"] },
+                    { emoji: "💣", name: "炸彈遊戲", time: "15 分", desc: "傳遞計時器。使用網路免費轉盤網站隨機顯示一張圖片，拿到球的人必須用該圖片造出一個完整的短語才能傳給下一位。", grouping: "不需分組 (圍成圓圈)", groupSize: "全班圍坐", materials: "手機計時器 (設 30 秒)、網路轉盤 (輸入當課單字圖片)", steps: ["全班圍成一圈，老師設定計時器。「輪になってください。タイマーをセットします。」", "計時開始，轉盤轉出一張圖 (如：看電視)。「スタート！この絵は何ですか？」", "拿手機的學生要馬上說出日文。學生說：「テレビを見ます！」", "說對了才能把手機傳給下一位，下一位要轉新的圖。「はい、次の人へ！」", "鈴聲響時，拿著手機的人要接受趣味懲罰。「ドカーン！アウト！罰ゲームです。」"] },
+                    { emoji: "❓", name: "我是誰 (背對螢幕版)", time: "15 分", desc: "一位學生背對投影幕。投影片顯示一個名詞。全班同學給動詞提示，該學生要猜出背後的名詞。", grouping: "輪流上台", groupSize: "1 人在台前，其餘在台下", materials: "投影片 (單字題目)、一張椅子", steps: ["將椅子背對螢幕放在講台前，請一位自願者坐下。「誰かやりたい人？ここに来てください。」", "螢幕顯示單字 (如：筷子)。老師對台下說：「答えを言わないで！ヒントをください。」", "台下同學要用日語動詞提示。學生喊：「食べます！使います！」", "台上學生猜出答案。學生說：「お箸！」「正解！」"] },
+                    { emoji: "⭕", name: "九宮格連線", time: "15 分", desc: "投影片顯示九宮格，每格有一個動詞。學生輪流選擇一格並造句，造對了該格就畫圈，最先連成線的隊伍獲勝。", grouping: "分兩隊 (O隊與X隊)", groupSize: "每隊 5-8 人", materials: "投影片 (畫好九宮格，填入 9 個動詞)", steps: ["全班分兩隊，決定誰先攻。「じゃんけんぽん！勝ったチームから。」", "先攻隊伍選一個格子 (如：書きます)。「どこのマスにしますか？」", "該隊必須造出正確句子。學生說：「手紙を書きます。」", "造句正確則該格畫上該隊符號。「OK！マルを書きますね。」", "最先連成一線的隊伍獲勝。「ビンゴ！おめでとう！」"] },
+                    { emoji: "🐉", name: "造句接龍", time: "10 分", desc: "投影片顯示起始字：「吃」。逐步擴充句子長度。", grouping: "分組競賽", groupSize: "3-4 人一組", materials: "投影片 (起始動詞)、小白板 (選配)", steps: ["老師給一個起始動詞，如「吃」。「最初の言葉は『食べます』です。」", "第一位學生加受詞。學生說：「ご飯を食べます。」", "第二位學生加形容詞。學生說：「美味しいご飯を食べます。」", "第三位學生加地點。學生說：「レストランで美味しいご飯を食べます。」", "挑戰哪一組能接最長且文法正確。「もっと長くできますか？」"] }
+                ]
+            },
+            {
+                title: "二、漢字讀音與單句認讀 (10分鐘內一定得結束)",
+                color: "bg-cyan-50 border-cyan-200 text-cyan-900",
+                icon: <Mic className="w-6 h-6 text-cyan-600" />,
+                activities: [
+                    { emoji: "🧭", name: "漢字雷達指引", time: "5 分", desc: "投影片散佈當課 10 個漢字。老師唸出讀音，全班學生要同時用手指向該字在螢幕上的位置。", grouping: "全班活動", groupSize: "全班 10-16 人", materials: "投影片 (散佈漢字圖)", steps: ["投影片上隨機散佈本課的 10 個漢字。「漢字を探してください。」", "老師唸出其中一個字的讀音。「がっこう！」", "全班同學舉起手，指向螢幕上該字的位置 (如：右上)。「指で指して！」", "老師確認大家指的方向是否一致。「そう、右ですね。」", "速度由慢變快，訓練聽音辨位反應。「スピードアップしますよ！」"] },
+                    { emoji: "😶‍🌫️", name: "消失的漢字", time: "5 分", desc: "投影片顯示那 8 句課文，但把當課的 10 個漢字挖空。老師唸句子，學生要搶答填回正確的漢字。", grouping: "全班", groupSize: "全班", materials: "投影片", steps: ["投影片顯示挖空的句子。「空欄には何が入りますか？」", "老師唸出完整句子。「わたしは『がっこう』に行きます。」", "學生要在白板或紙上寫出（或口頭回答）「学校」這個漢字。「書いてください！」", "確認筆順與寫法是否正確。「正しいですか？確認しましょう。」"] },
+                    { emoji: "⚡", name: "讀音閃電戰", time: "5 分", desc: "投影片快速閃現這 10 個漢字。學生分兩隊，看到字要馬上喊出正確讀音。", grouping: "分兩隊", groupSize: "每隊 5-8 人", materials: "投影片", steps: ["兩隊各派一人站起來。「起立！準備！」", "投影片閃出一個漢字 (如：食)。「これ！」", "看誰先喊出正確讀音 (Tabe / Shoku)。學生喊：「たべます！」", "輸的坐下，贏的繼續挑戰下一人。「勝ち！次の人！」"] },
+                    { emoji: "🕵️", name: "漢字找碴", time: "5 分", desc: "投影片顯示課文句子，但故意把漢字寫錯。學生要在一分鐘內找出錯誤。", grouping: "個人", groupSize: "全班", materials: "投影片", steps: ["投影片顯示含有錯字的句子。「間違いはどこですか？」", "給學生 30 秒觀察。「よく見てくださいね。」", "請學生指出哪裡錯了，並在黑板寫出正確的字。「正しい漢字を書いてください。」", "訓練對漢字形似的辨識能力。「よく気づきましたね！」"] },
+                    { emoji: "🧩", name: "句子重組", time: "10 分", desc: "投影片將一句課文打散成單字氣泡。學生看著亂掉的順序，嘗試唸出正確通順的句子。", grouping: "兩人", groupSize: "2人", materials: "投影片", steps: ["投影片顯示散亂的單字。「並べ替えてください。」", "兩位同學討論正確順序。「二人で考えて。」", "老師點名一組回答。「はい、発表してください。」", "確認助詞的位置是否正確。「助詞の位置に気をつけて。」"] },
+                    { emoji: "🖼️", name: "看圖猜字", time: "5 分", desc: "投影片顯示圖片。學生要用手指在空中寫出對應的當課漢字。", grouping: "全班", groupSize: "全班", materials: "投影片", steps: ["投影片顯示一張圖片 (如：一座山)。「これは何ですか？」", "學生用食指在空中筆畫寫出「山」。「空に書いてください。せーの！」", "老師觀察學生的筆順是否大致正確。「書き順、大丈夫ですか？」", "公布答案，確認漢字寫法。「正解はこれです。」"] },
+                    { emoji: "⏱️", name: "朗讀接力賽", time: "5 分", desc: "投影片顯示這 8 句課文。全班接力朗讀，每人一句。計時挑戰。", grouping: "接力", groupSize: "全班", materials: "計時器", steps: ["老師按下計時器。「タイムアタックです。よーい、スタート！」", "第一位學生唸第一句，依此類推。「次、次！」", "中間不能卡住超過 3 秒，也不能唸錯。「止まらないで！」", "若失敗則重來，目標是全班在 30 秒內完成。「30秒以内に！」"] },
+                    { emoji: "🎭", name: "情感朗讀", time: "10 分", desc: "投影片指定情緒。學生要用該情緒朗讀指定的課文句子。", grouping: "個人", groupSize: "抽點", materials: "投影片", steps: ["投影片顯示一句課文。「この文を読みます。」", "老師指定一個情緒，例如「非常生氣」。「すごく怒って読んでください。」", "學生要用生氣的語氣唸出該句子。「もっと気持ちを入れて！」", "其他同學猜他是在演什麼情緒。「どんな気持ちでしたか？」"] },
+                    { emoji: "⭕", name: "漢字賓果", time: "10 分", desc: "學生畫 3x3 格子，填入當課 10 個漢字。老師唸句子，有用到該漢字就圈起來。", grouping: "個人", groupSize: "全班", materials: "紙筆", steps: ["請學生在紙上畫九宮格，填入漢字。「9マスに漢字を書いてください。」", "老師隨機唸出課文句子。「今から文を読みます。」", "若句子中有出現該漢字，學生即可圈起來。「ありましたか？丸をつけて。」", "最先連成兩條線的人喊「賓果」獲勝。「ビンゴの人は手を挙げて！」"] },
+                    { emoji: "🔨", name: "敲敲黑板", time: "10 分", desc: "投影片投影 10 個漢字。兩位學生上台，聽到該句子有哪個漢字就要去敲擊螢幕上的那個字。", grouping: "雙人", groupSize: "2人上台", materials: "軟棒", steps: ["投影片顯示本課所有漢字。「前を見てください。」", "兩位學生上台拿軟棒。「叩く準備！」", "老師唸句子，學生聽到關鍵字要搶快去敲擊。「私は『毎日』勉強します！」", "先敲到的人得分。「早かった！一点！」"] }
+                ]
+            }
+        ];
+
+        const activitiesDataP2 = [
+            {
+                title: "三、會話與文法 1：句型結構",
+                color: "bg-green-50 border-green-200 text-green-900",
+                icon: <Repeat className="w-6 h-6 text-green-600" />,
+                activities: [
+                    { emoji: "🎡", name: "轉盤造句大挑戰", time: "8 分", desc: "使用網路免費轉盤，設置「主詞區」與「動詞區」。轉到什麼，學生就要造出完整句子。", grouping: "分組", groupSize: "3-4人", materials: "網路轉盤", steps: ["老師準備兩個轉盤：一個轉「人」，一個轉「動作」。「ルーレットを回しますよ！」", "轉出「爸爸」和「唱歌」。「お父さん、歌う。はい、文を作って！」", "學生搶答造句。「お父さんは歌を歌います。」", "進階挑戰，加入「時間」轉盤。「次は時間も入れましょう。」"] },
+                    { emoji: "💨", name: "助詞大風吹", time: "5 分", desc: "老師唸一句話省略助詞。指定助詞的人要起立拍手。", grouping: "不需分組", groupSize: "全班", materials: "無", steps: ["分配助詞動作：聽到『を』拍手、聽到『に』起立、聽到『で』摸頭。「『を』は拍手、『に』は立つ、『で』は頭。」", "老師唸缺空句。「よく聞いてくださいね。」", "例句一（を）：老師唸「ご飯（空白）食べます」，學生判斷是『を』，全班一起拍手。「ご飯…食べます！はい！」", "例句二（に）：老師唸「学校（空白）行きます」，學生判斷是『に』，全班起立。「学校…行きます！どうぞ！」", "例句三（で）：老師唸「バス（空白）帰ります」，學生判斷是『で』，全班摸頭。「バス…帰ります！はい！」", "速度由慢轉快，訓練助詞反應。「もっと速くしますよ！」"] },
+                    { emoji: "🔄", name: "換句話說 (代換練習)", time: "5 分", desc: "投影片顯示基礎句型。隨機跳出圖片，學生要瞬間替換動詞與受詞。", grouping: "全班", groupSize: "全班", materials: "投影片 (基礎句型 + 替換單字圖)", steps: ["投影片顯示基本句：テレビを見ます。老師充滿活力地說：「はい、スタート！」", "圖片跳轉成「咖啡」。老師指著螢幕問：「はい、次は？」", "學生瞬間反應喊出：「コーヒーを飲みます！」", "老師大讚並馬上切下一張：「いいですね！もっと速く！」", "隨著圖片切換加速，老師持續喊聲：「負けないで！頑張って！」"] },
+                    { emoji: "🗣️", name: "快速問答", time: "5 分", desc: "老師丟球問「昨天去了哪裡？」，接球者必須馬上回答並傳給下一人。", grouping: "圍圈", groupSize: "全班", materials: "軟球", steps: ["全班圍成一圈。「輪になってください。」", "老師拿球問問題，丟給學生甲。「昨日、どこへ行きましたか？はい！」", "學生甲接球，3秒內回答。「デパートへ行きました。」", "學生甲再問一個問題，丟給學生乙。「次の人に質問して！」"] },
+                    { emoji: "🃏", name: "句型卡牌接龍", time: "5 分", desc: "投影片顯示上句「因為下雨...」，學生要接下句「所以不去」。", grouping: "分組", groupSize: "3-4人", materials: "投影片", steps: ["老師在投影片顯示上句：「天気がいいですから (因為天氣好)」。「天気がいいですから…？」", "各組討論後舉手搶答接下句。「続きを考えて！」", "只要邏輯通順、文法正確都得分。「散歩します。いいですね！」", "激發學生不同的想像力。「他にありますか？」"] },
+                    { emoji: "👥", name: "真人造句", time: "10 分", desc: "投影片顯示散亂的詞彙氣泡。請學生上台指出正確順序。", grouping: "個人", groupSize: "1人上台", materials: "投影片", steps: ["投影片顯示氣泡：[行きます] [へ] [スーパー] [母] [は]。「正しい順序は？」", "請一位學生上台，用手依序拍擊氣泡。「タッチしてください。」", "順序正確後，全班跟著大聲唸一遍正確句子。「みんなで読みましょう。」", "強化語序 (SOV) 概念。「動詞は最後ですよ。」"] },
+                    { emoji: "🔍", name: "尋人任務", time: "10 分", desc: "投影片顯示訪問題目。學生離座互相訪問並記錄同學名字。", grouping: "自由走動", groupSize: "全班", materials: "筆記本", steps: ["投影片出示題目，例如「不想吃青椒的人」。「ピーマンを食べたくない人を探して。」", "學生抄下題目，離開座位去問同學。「席を立って、インタビューして！」", "用日語問：ピーマンを食べたいですか？老師提醒：「日本語だけですよ。」", "找到回答「いいえ」的人，就記下名字。「名前を書いてください。」"] },
+                    { emoji: "⚖️", name: "文法拍賣會", time: "15 分", desc: "學生分組用假錢競標「正確的句子」。買到錯句要扣分。", grouping: "分組", groupSize: "3-4人", materials: "假錢、投影片", steps: ["每組發 1000 元籌碼。「1000円あります。」", "投影片顯示句子：私は日本へ行きます。老師喊價：「いくら出しますか？」", "各組喊價競標。「ハンマーチャンス！落札！」", "最後結算資產最多的組別獲勝。「結果発表！」"] }
+                ]
+            },
+            {
+                title: "四、會話與文法 2：情境應用",
+                color: "bg-rose-50 border-rose-200 text-rose-900",
+                icon: <Users className="w-6 h-6 text-rose-600" />,
+                activities: [
+                    { emoji: "🎲", name: "情境轉盤角色扮演", time: "8 分", desc: "使用網路轉盤設定「地點」與「對象」。轉到後即興對話 1 分鐘。", grouping: "兩人一組", groupSize: "2人", materials: "網路轉盤", steps: ["轉盤轉出地點「便利商店」和對象「外星人」。「場所はコンビニ、相手は宇宙人！」", "兩位學生必須馬上進入角色。「アクション！」", "店員與外星人開始對話。「いらっしゃいませ…えっ！？」", "目標是持續對話不冷場。「会話を続けて！」"] },
+                    { emoji: "🎰", name: "命運的提問 (隨機問答)", time: "5 分", desc: "老師準備 6 個當日主題相關的短問句。學生轉動轉盤，回答抽到的問題。", grouping: "個人輪流", groupSize: "全班", materials: "網路轉盤 (設定數字 1-6)、投影片 (顯示 6 個問題)", steps: ["老師在投影片列出 6 個問題 (如：1.昨晚幾點睡？)。「質問は6つあります。」", "學生輪流上台點擊網路轉盤。「ルーレットを回して！」", "轉到數字 3，就要回答第 3 題。「3番！昨日何時に寝ましたか？」", "回答完整句子得一分。「はい、1ポイント！」"] },
+                    { emoji: "🗣️", name: "影子跟讀", time: "5 分", desc: "播放一段課文錄音，學生不看課本，慢半拍跟著唸。", grouping: "全班", groupSize: "全班", materials: "音檔", steps: ["播放音檔，不暫停。「CDを聞きながら、すぐ後について言ってください。」", "學生不看課本，聽到聲音後延遲 0.5 秒跟著唸。「教科書は見ないで。」", "重點模仿「語調」和「速度」。「イントネーションを真似して。」", "最後全班一起大聲朗讀一遍。「最後にみんなで！」"] },
+                    { emoji: "🗺️", name: "資訊落差", time: "10 分", desc: "投影片輪流顯示甲版與乙版地圖。透過對話找出地圖差異。", grouping: "兩人一組", groupSize: "2人", materials: "投影片", steps: ["投影片先顯示 A 圖 (請 B 閉眼)。「Bさんは目を閉じて。」", "再顯示 B 圖 (請 A 閉眼)。「今度はAさんが目を閉じて。」", "兩人都張開眼，不看螢幕，開始互問。「質問して違いを探してください。」", "確認答案。「答え合わせをしましょう。」"] },
+                    { emoji: "🧩", name: "猜猜發生什麼事", time: "10 分", desc: "投影片顯示一張奇怪的圖片。學生用「因為...」句型推測原因。", grouping: "小組", groupSize: "3-4人", materials: "投影片", steps: ["投影片顯示：一個全身濕透的人站在門口。老師問：「どうして濡れましたか？」", "小組討論造句。「理由を考えてください。」", "組別回答：「因为掉進河裡」。「川に落ちましたから。」", "答案最有創意的組別獲勝。「面白い！一票！」"] },
+                    { emoji: "📊", name: "班級大調查", time: "10 分", desc: "設定一個主題。學生離座互相調查，最後匯報結果。", grouping: "自由走動", groupSize: "全班", materials: "白板", steps: ["設定主題：早餐吃什麼？「テーマは朝ご飯です。」", "學生互相問答並記錄。「みんなに聞いてください。」", "統計結束後，選一位學生上台匯報。「発表をお願いします。」", "練習數量詞與報告句型。「パンの人は何人ですか？」"] },
+                    { emoji: "🎭", name: "角色扮演挑戰", time: "15 分", desc: "投影片顯示角色設定。依據當課句型進行 1 分鐘生存對話。", grouping: "兩人一組", groupSize: "2人", materials: "投影片", steps: ["設定場景：餐廳。角色 A：很餓的客人。 角色 B：一直送錯菜的店員。「お客さんと店員さんです。」", "給予任務：A 必須成功吃到正確的菜。「正しい料理をもらってください。」", "學生開始即興對話。「よーい、スタート！」", "練習抗議、點餐、道歉的日語表現。「上手ですね！」"] },
+                    { emoji: "🎤", name: "小小採訪員", time: "15 分", desc: "學生扮演記者，用六何法採訪「名人」。", grouping: "三人一組", groupSize: "3人", materials: "麥克風", steps: ["請一位學生當「名人」(如：金城武)。「あなたはスターです。」", "其他兩人當記者，輪流提問。「記者になってインタビューしてください。」", "問：何時來日本？ 吃了什麼？「いつ日本へ来ましたか？」", "最後記者要用「他語 (轉述)」向全班報告採訪內容。「みんなに報告してください。」"] }
+                ]
+            },
+            {
+                title: "五、讀解與仿寫練習",
+                color: "bg-purple-50 border-purple-200 text-purple-900",
+                icon: <PenTool className="w-6 h-6 text-purple-600" />,
+                activities: [
+                    { emoji: "🎯", name: "故事接龍轉盤", time: "8 分", desc: "使用網路轉盤設定連接詞。學生一說一句話，學生二轉轉盤，必須用轉到的連接詞接下一句。", grouping: "分組", groupSize: "4-5人", materials: "網路轉盤", steps: ["學生甲起頭：今天是星期日。「今日は日曜日です。」", "學生乙轉到「但是」。「しかし！」", "學生乙接：但是，雨正在下。「しかし、雨が降っています。」", "看故事會變得多荒謬。「変な話ですね！」"] },
+                    { emoji: "👀", name: "關鍵字抓抓樂", time: "5 分", desc: "投影片投影一篇短文。老師喊關鍵字類型，學生寫下答案。", grouping: "個人", groupSize: "全班", materials: "投影片", steps: ["投影片顯示一篇約 100 字的短文。「読んでください。」", "老師喊：「找時間！」「時間！」", "學生快速掃描，抄寫出所有時間詞 (如：昨日、8時)。「書き出してください。」", "訓練略讀 (Scanning) 技巧。「早く見つけて！」"] },
+                    { emoji: "✂️", name: "重組 4 格漫畫", time: "10 分", desc: "投影片顯示順序錯亂的漫畫。學生寫出正確順序。", grouping: "兩人一組", groupSize: "2人", materials: "投影片", steps: ["投影片顯示四張順序混亂的漫畫圖片。「順番が違いますね。」", "學生必須閱讀圖片中的日文對白，判斷故事的前後邏輯。「話の流れを考えて。」", "在紙上寫下正確順序 (例如：C -> A -> B -> D)。「正しい順番は？」", "老師公佈答案並講解連接詞。「正解はこちら！」"] },
+                    { emoji: "📝", name: "改寫結局", time: "10 分", desc: "閱讀課文對話後，改寫最後一句話，創造意外結局。", grouping: "個人", groupSize: "全班", materials: "課本", steps: ["閱讀完課文。「教科書を読みましょう。」", "老師要求改寫最後一句話。「最後の文を変えてください。」", "例如原句：「我們結婚了。」學生改寫：「但是，他是外星人。」「でも、彼は宇宙人でした。」", "請幾位學生發表，增加課堂樂趣。「面白い結末ですね！」"] },
+                    { emoji: "💬", name: "簡訊回覆挑戰", time: "15 分", desc: "投影片顯示訊息。學生寫出得體的回覆。", grouping: "個人", groupSize: "全班", materials: "投影片", steps: ["投影片顯示朋友傳來的邀約：「明天要不要看電影？」「友達からメッセージです。」", "設定情境：拒絕 (要給理由)。「断ってください。理由も書いて。」", "學生在紙上寫出回覆短文。「返事を書きましょう。」", "重點練習拒絕時的委婉語氣。「『ちょっと…』を使ってくださいね。」"] },
+                    { emoji: "📖", name: "看圖說故事 (短文創作)", time: "15 分", desc: "投影片顯示情境圖。學生寫出一段短文。", grouping: "個人", groupSize: "全班", materials: "投影片", steps: ["圖片：週末的公園 (有人在跑步、有人在吃便當)。「絵を見て文を作ります。」", "要求：使用「～ています (正在做)」句型。「『～ています』を使って。」", "學生寫出 3-5 句描述圖片的短文。「3つぐらい書いてください。」", "老師巡堂批改。「チェックしますね。」"] },
+                    { emoji: "✈️", name: "旅遊計畫書", time: "15 分", desc: "規劃一個 3 天 2 夜的日本行程並寫在海報上。", grouping: "分組", groupSize: "3-4人", materials: "海報紙", steps: ["每組選一個日本城市 (東京、大阪)。「どこへ行きたいですか？」", "規劃行程：去哪裡？吃什麼？「何をしますか？」", "使用句型：～たいです (想做...)。「『～たいです』を使って。」", "將計畫寫在海報上，最後上台發表。「ポスターに書いて発表しましょう。」"] },
+                    { emoji: "🕵️", name: "誰是兇手", time: "15 分", desc: "閱讀證詞，推斷出誰在說謊。", grouping: "小組", groupSize: "3-4人", materials: "投影片", steps: ["案發時間：昨晚 8 點。「事件は昨日の8時です。」", "嫌疑人 A：我在洗澡。(8:00-8:30) 嫌疑人 B：我在看電視。(7:00-9:00)。「アリバイを確認しましょう。」", "線索：那時停電了，不能看電視。「ヒントは停電です。」", "學生閱讀證詞，推斷 B 說謊。「犯人は誰ですか？」"] }
+                ]
+            }
+        ];
+
+        const generalMethods = [
+            {
+                id: 1,
+                title: "1. 殘酷二選一",
+                icon: "⚖️",
+                tags: ["活動型", "低壓力"],
+                detail: "上班族累了不想動腦造句。這個活動只需要他們「移動身體」或「舉牌」。問一些有趣、沒有標準答案的問題，讓學生選 A 或 B。選好後，只需問一句簡單的「為什麼？」，因為立場明確，學生比較容易擠出理由。",
+                items: "不需要 (或準備紅色/藍色舉牌)",
+                grouping: "全班一起 (依選擇分成兩派)",
+                script: "請全班同學離開座位站起來。<br>「皆さん、立ち上がってください！」<br>提出極端的問題，A與B。<br>「質問です。究極の選択です！A: お金持ちだけど、休みが全くない。B: 貧乏だけど、毎日が休み。」<br>請學生依據選擇移動位置。<br>「Aの人は右へ、Bの人は左へ！」<br>隨機詢問理由。<br>「なぜですか？教えてください。」"
+            },
+            {
+                id: 2,
+                title: "2. 片假名禁令",
+                icon: "🚫",
+                tags: ["遊戲化", "表達力"],
+                detail: "日本人生活中充滿外來語。這個遊戲要求學生解釋一個單字（如「Starbucks」），但絕對不能說到任何片假名（如 Coffee, American, Shop）。這會迫使他們用原本學過的簡單日語（黑色、苦的、水、很貴）來拼湊。",
+                items: "題目卡 (寫著各種外來語)",
+                grouping: "全班圍圈 或 分兩組競賽",
+                script: "宣布遊戲開始。<br>「今からゲームをします。」<br>出題（如：漢堡）。<br>「お題は『ハンバーガー』です。」<br>強調禁止使用片假名。<br>「でも、カタカナは禁止です！『マクドナルド』もダメですよ。」<br>請學生開始解釋。<br>「はい、説明してください！」"
+            },
+            {
+                id: 3,
+                title: "3. 這是誰的手機？",
+                icon: "📱",
+                tags: ["觀察力", "趣味"],
+                detail: "請老師準備幾張「手機相簿截圖」或「手機桌布」(可以是網路抓的虛擬人物，或老師自己的)。讓學生看照片推理這個人的年紀、職業、興趣。因為是「推理別人」，不是講自己，學生比較不會有防衛心。",
+                items: "3-4張手機桌布/相簿截圖 (投影或印出來)",
+                grouping: "3-4人一組討論",
+                script: "展示某人的手機畫面。<br>「これを見てください。ある人のスマホの画面です。」<br>引導學生推測性別。<br>「この人は男ですか？女ですか？」<br>推測工作與理由。<br>「仕事は何だと思いますか？なぜそう思いますか？」<br>請大家當偵探。<br>「グループで探偵になってください！」"
+            },
+            {
+                id: 4,
+                title: "4. 只有這一點是真的",
+                icon: "🤥",
+                tags: ["經典", "互相了解"],
+                detail: "每個人寫下關於自己的三件事，其中兩件是真的，一件是假的。其他人要發問來找出哪一個是謊言。這能滿足上班族「窺探他人八卦」的樂趣，且因為在說謊，表情會變得很豐富。",
+                items: "紙和筆",
+                grouping: "全班 (輪流上台) 或 小組",
+                script: "請學生寫下三條關於自己的新聞。<br>「紙に自分についてのニュースを3つ書いてください。」<br>說明規則（兩真一假）。<br>「2つは本当、1つは嘘です。」<br>舉例（例如：討厭貓）。<br>「例えば、『私は猫が嫌いです』。」<br>請大家發問找出謊言。<br>「どれが嘘か、質問して見破ってください！」"
+            },
+            {
+                id: 5,
+                title: "5. 居酒屋模式",
+                icon: "🍻",
+                tags: ["情境模擬", "放鬆"],
+                detail: "把教室燈光調稍微暗一點，播放一點背景爵士樂。允許學生喝水/飲料。每個人發一張「身份卡」（比如：嚴厲的上司、想辭職的下屬、剛失戀的OL）。大家用角色扮演的方式抱怨生活。因為是演戲，他們敢說出平時不敢說的日文。",
+                items: "身份卡、背景音樂、紙杯(裝水也行)",
+                grouping: "一對一 或 3人一組",
+                script: "營造輕鬆氣氛，乾杯。<br>「はい、お疲れ様です！乾杯！」<br>宣布今天無拘無束。<br>「今日は無礼講（ぶれいこう）です。」<br>分配角色（如：生氣的上司）。<br>「あなたは『怒っている上司』役です。」<br>引導學生發牢騷。<br>「愚痴（ぐち）を言ってください！」"
+            },
+            {
+                id: 6,
+                title: "6. 畫圖傳話",
+                icon: "🎨",
+                tags: ["動手做", "爆笑"],
+                detail: "第一個人看題目（例如「哥吉拉在吃拉麵」），畫出來傳給第二個，第二個看圖猜是什麼並用日文寫下來/講給第三個聽，第三個再畫。最後核對答案。過程中學生會急著用日文解釋「那個不是蛇，是尾巴！」，自然產生對話。",
+                items: "白紙、粗筆",
+                grouping: "5人一組 (接龍)",
+                script: "說明規則，只用畫畫傳達。<br>「絵だけで伝えますよ。」<br>強調禁止說話。<br>「喋ってはいけません。」<br>時間到，停止。<br>「はい、ストップ！」<br>請最後的人解釋畫作內容。<br>「最後の人は、絵を見て日本語で説明してください。」"
+            },
+            {
+                id: 7,
+                title: "7. 如果我有10億圓",
+                icon: "💰",
+                tags: ["幻想", "高動機"],
+                detail: "現實太苦悶，讓大家做白日夢。設定一個超現實情境：突然中了10億樂透。輪流說出想做的一件事。必須具體（不能只說買房子，要說買在哪裡、多大、誰住）。這能引發其他同學的羨慕或吐槽。",
+                items: "假鈔道具(選配)",
+                grouping: "圓圈模式 (Circle Time)",
+                script: "恭喜大家中獎。<br>「おめでとうございます！宝くじが当たりました！」<br>設定情境（有10億，不用工作）。<br>「10億円あります。明日から仕事に行かなくていいです。」<br>詢問想買什麼、去哪裡。<br>「まず、何を買いますか？どこへ行きますか？」<br>要求具體說明。<br>「具体的にお願いします！」"
+            },
+            {
+                id: 8,
+                title: "8. 匿名煩惱諮詢室",
+                icon: "💌",
+                tags: ["書寫結合口說", "隱私"],
+                detail: "每個人在一張小紙條寫下一個最近真實的煩惱（工作、家庭、戀愛皆可，不記名）。摺好丟進盒子。老師隨機抽出一張唸出來，全班一起當「諮詢師」給建議。因為是匿名的，大家會很熱衷於給意見。",
+                items: "小紙條、一個盒子",
+                grouping: "全班共同討論",
+                script: "請大家放心，不記名。<br>「誰が書いたかわかりません。安心してください。」<br>唸出煩惱（如：變胖了）。<br>「悩みは…『最近、太ってしまいました』。」<br>請全班醫生給建議。<br>「はい、ドクターの皆さん、アドバイスを！」<br>詢問有無好主意。<br>「良いアイデアはありませんか？」"
+            },
+            {
+                id: 9,
+                title: "9. 照片找不同",
+                icon: "🔍",
+                tags: ["專注力", "描述練習"],
+                detail: "兩個人一組，拿到的圖有5個地方不同。A不能看B的圖，B不能看A的圖。只能用對話找出不同點。「我的圖右邊有一隻貓，你的有嗎？」「我的貓是白色的。」這能強迫訓練方位詞和形容詞。",
+                items: "兩張稍有不同的圖片 (網路上搜尋 Spot the difference worksheet)",
+                grouping: "2人一組 (背對背 或 中間隔板)",
+                script: "提醒不可偷看。<br>「相手の絵を見ないでください！」<br>說明只用語言找不同。<br>「言葉だけで間違いを探します。」<br>示範問句（右上有什麼）。<br>「例えば、『右上に何がありますか？』」<br>鼓勵多發問。<br>「どんどん質問してください。」"
+            },
+            {
+                id: 10,
+                title: "10. 懶人造句接龍",
+                icon: "🧠",
+                tags: ["節奏快", "無文法"],
+                detail: "不需要完整句子。老師給一個主題詞，學生要聯想並講出相關單字/短句，接不下去的人要小懲罰（如起立蹲下）。重點是「節奏快」。<br>主題：便利商店 -> 飯糰 -> 鮪魚 -> 好吃 -> 壽司...",
+                items: "計時器 (製造緊張感)",
+                grouping: "全班圍圈",
+                script: "要求大家配合節奏。<br>「リズムに合わせて！」<br>給出主題（如：日本的夏天）。<br>「テーマは『日本の夏』！」<br>示範接龍（煙火、好熱、啤酒）。<br>「花火！暑い！ビール！」<br>催促下一位。<br>「ハイ、次！止まらないで！」"
+            }
+        ];
+
+        // --- SUB COMPONENTS ---
+
+        const ChecklistView = ({ categories, checkedItems, toggleItem, setCurrentView }) => (
+            <div className="space-y-6 animate-in fade-in duration-300">
+                {categories.map((cat, catIdx) => (
+                    <div key={catIdx} className="bg-white rounded-sm shadow-md border-l-8 border-l-[#8b5a2b] relative overflow-hidden group hover:shadow-lg transition-all">
+                        <div className="absolute top-4 left-[-6px] w-3 h-3 rounded-full bg-[#f3f0e9] border border-gray-300"></div>
+                        <div className="absolute bottom-4 left-[-6px] w-3 h-3 rounded-full bg-[#f3f0e9] border border-gray-300"></div>
+                        <div className="bg-[#2d3748] p-4 flex items-center gap-3">
+                            <div className="p-2 bg-white/10 rounded-full text-white">{cat.icon}</div>
+                            <div><h3 className="text-lg font-bold text-white tracking-wide">{cat.title}</h3><p className="text-xs text-gray-300 font-light">{cat.description}</p></div>
+                        </div>
+                        <div className="divide-y divide-blue-100 bg-[linear-gradient(to_bottom,transparent_23px,#e5e7eb_24px)] bg-[length:100%_24px] p-2">
+                            {cat.items.map((item, itemIdx) => {
+                                const isChecked = checkedItems[`${catIdx}-${itemIdx}`] || false;
+                                return (
+                                    <div key={itemIdx} onClick={() => toggleItem(catIdx, itemIdx)} className="group p-3 flex items-start gap-4 cursor-pointer transition-all duration-200 rounded hover:bg-yellow-50/80">
+                                        <button className={`mt-0.5 flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-all duration-200 ${isChecked ? 'border-green-600 bg-green-600 text-white rotate-3 scale-110' : 'border-gray-400 text-transparent group-hover:border-green-500'}`}>
+                                            <CheckCircle size={16} strokeWidth={3} className={isChecked ? 'opacity-100' : 'opacity-0'} />
+                                        </button>
+                                        <div className="flex-1"><span className={`text-base font-medium transition-all ${isChecked ? 'text-gray-400 line-through decoration-gray-400 decoration-2' : 'text-gray-800'}`}>{item}</span></div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
+                <div className="mt-10 flex justify-center">
+                    <button onClick={() => setCurrentView('activities_p1')} className="group relative inline-flex items-center gap-3 px-8 py-4 bg-[#8b5a2b] text-white text-xl font-bold rounded-lg shadow-lg hover:bg-[#724a23] transition-all duration-200 active:translate-y-1 active:shadow-none">
+                        <span className="absolute inset-0 border-2 border-white/20 rounded-lg"></span>
+                        <GraduationCap className="animate-bounce" /> 下一步：查看教室活動 (第一頁) <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
+                </div>
+            </div>
+        );
+
+        const ActivitiesView = ({ data, onCardClick, navButtons }) => (
+            <div className="space-y-8 animate-in slide-in-from-right duration-300 pb-12">
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-r shadow-sm">
+                    <div className="flex items-start">
+                        <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5 mr-3 flex-shrink-0" />
+                        <div><h3 className="text-blue-800 font-bold text-sm mb-1">老師請注意：</h3><p className="text-blue-700 text-sm">每課建議挑選 1-3 個活動即可。請根據班級狀況靈活調整。<br/><span className="font-bold underline">點擊活動卡片可查看詳細實施步驟！</span></p></div>
+                    </div>
+                </div>
+                {data.map((section, idx) => (
+                    <div key={idx} className="bg-[#fff9c4] rounded-sm shadow-[2px_2px_10px_rgba(0,0,0,0.1)] relative p-6 max-w-5xl mx-auto border border-amber-200">
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-red-500 shadow-md border-2 border-red-700 z-10"></div>
+                        <div className="flex items-center gap-3 border-b-2 border-amber-900/10 pb-4 mb-6">
+                            <div className={`p-2 rounded-lg ${section.color.split(' ')[0]}`}>{section.icon}</div>
+                            <h2 className="text-2xl font-bold text-amber-900">{section.title}</h2>
+                        </div>
+                        <div className="grid gap-6 md:grid-cols-2">
+                            {section.activities.map((act, actIdx) => (
+                                <div key={actIdx} onClick={() => onCardClick(act)} className="group bg-white p-5 rounded-lg shadow-sm border border-amber-100 hover:shadow-xl hover:border-amber-300 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden cursor-pointer">
+                                    <div className="flex items-start gap-4">
+                                        <div className="text-4xl select-none animate-bounce" style={{ animationDuration: '2s' }}>{act.emoji}</div>
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h3 className="text-lg font-bold text-gray-800 group-hover:text-amber-700 transition-colors">{act.name}</h3>
+                                                {act.time && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600"><Clock size={12} className="mr-1" />{act.time}</span>}
+                                            </div>
+                                            <p className="text-sm text-gray-600 leading-relaxed font-medium line-clamp-2">{act.desc}</p>
+                                            <div className="mt-3 flex items-center text-xs text-amber-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity">點擊查看詳細步驟 <ChevronRight size={14} /></div>
+                                        </div>
+                                    </div>
+                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-200 to-amber-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+                {navButtons}
+                <div className="text-center text-gray-400 text-sm pb-8 mt-6">- 快樂學習，開口說日語 -</div>
+            </div>
+        );
+
+        const TeachingTipsView = ({ navButtons }) => (
+            <div className="space-y-8 animate-in slide-in-from-right duration-300 pb-12">
+                <div className="bg-orange-50 border-l-4 border-orange-500 p-6 rounded-r shadow-sm mb-8">
+                    <div className="flex items-start">
+                        <Lightbulb className="w-8 h-8 text-orange-500 mt-1 mr-4 flex-shrink-0" />
+                        <div><h2 className="text-xl font-bold text-orange-800 mb-2">授課建議：枯燥習題轉化術</h2><p className="text-orange-700 text-lg">當課本都是題目 (例如：3 大題 x 5 小題)，如何避免老師從頭講到尾？<br/>目標：讓學生「主動開口」，並將習題作為通往遊戲的「門票」。</p></div>
+                    </div>
+                </div>
+                <div className="grid gap-6 md:grid-cols-1">
+                    <div className="bg-white rounded-xl shadow-md border-t-4 border-red-500 p-6 hover:shadow-lg transition-shadow">
+                        <div className="flex items-center gap-3 mb-4"><div className="p-2 bg-red-100 rounded-lg text-red-600"><Timer size={24} /></div><h3 className="text-xl font-bold text-gray-800">1. 分組競速</h3></div>
+                        <div className="space-y-2 text-gray-600"><p><span className="font-bold text-gray-800">做法：</span>設定 5-8 分鐘計時器，全班分組討論並解題。老師不講解，只在巡堂時提示。</p><p><span className="font-bold text-gray-800">開口機制：</span>時間到後，隨機抽點學生回答（一人一題）。答錯不扣分，開放其他組搶答（加分）。</p><div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm"><span className="font-bold text-indigo-600">🚀 接續遊戲：</span>「恭喜大家在 8 分鐘內解決了所有題目！省下的時間，我們來玩『炸彈遊戲』複習剛剛的句型！」</div></div>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-md border-t-4 border-blue-500 p-6 hover:shadow-lg transition-shadow">
+                        <div className="flex items-center gap-3 mb-4"><div className="p-2 bg-blue-100 rounded-lg text-blue-600"><Users2 size={24} /></div><h3 className="text-xl font-bold text-gray-800">2. 學生出題</h3></div>
+                        <div className="space-y-2 text-gray-600"><p><span className="font-bold text-gray-800">做法：</span>與其老師問學生答，不如讓學生問同學。題組一由甲問乙，題組二由乙問丙。</p><p><span className="font-bold text-gray-800">開口機制：</span>學生必須唸出題目（練習讀題），被問者回答。老師只在旁聽，確認發音。</p><div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm"><span className="font-bold text-indigo-600">🚀 接續遊戲：</span>「大家問問題都很標準喔！那現在我們要用『轉盤』來決定誰問誰，進行更刺激的『快速問答』！」</div></div>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-md border-t-4 border-green-500 p-6 hover:shadow-lg transition-shadow">
+                        <div className="flex items-center gap-3 mb-4"><div className="p-2 bg-green-100 rounded-lg text-green-600"><Puzzle size={24} /></div><h3 className="text-xl font-bold text-gray-800">3. 搶答積分賽</h3></div>
+                        <div className="space-y-2 text-gray-600"><p><span className="font-bold text-gray-800">做法：</span>直接把習題變成積分賽。老師唸題號，舉手最快者回答。</p><p><span className="font-bold text-gray-800">開口機制：</span>回答正確得 1 分，若能解釋「為什麼選這個答案」得 2 分。</p><div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm"><span className="font-bold text-indigo-600">🚀 接續遊戲：</span>「最高分的組別，可以選擇等一下要玩『九宮格』還是『選邊站』！」(給予選擇權增加動機)</div></div>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-md border-t-4 border-purple-500 p-6 hover:shadow-lg transition-shadow">
+                        <div className="flex items-center gap-3 mb-4"><div className="p-2 bg-purple-100 rounded-lg text-purple-600"><MessageCircle size={24} /></div><h3 className="text-xl font-bold text-gray-800">4. 互改與回饋</h3></div>
+                        <div className="space-y-2 text-gray-600"><p><span className="font-bold text-gray-800">做法：</span>學生先寫完答案，然後交換課本。老師公佈答案，學生幫同學改。</p><p><span className="font-bold text-gray-800">開口機制：</span>改完後，必須用日語（或中文輔助）告訴同學錯在哪裡。例如：「這是『に』不是『で』」。</p><div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm"><span className="font-bold text-indigo-600">🚀 接續遊戲：</span>「大家都改好了嗎？既然筆試沒問題，我們來挑戰聽力反應，玩『助詞大風吹』！」</div></div>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-md border-t-4 border-amber-500 p-6 hover:shadow-lg transition-shadow">
+                        <div className="flex items-center gap-3 mb-4"><div className="p-2 bg-amber-100 rounded-lg text-amber-600"><RefreshCw size={24} /></div><h3 className="text-xl font-bold text-gray-800">5. 變化球練習</h3></div>
+                        <div className="space-y-2 text-gray-600"><p><span className="font-bold text-gray-800">做法：</span>習題只是「基礎」。學生回答完課本答案後，老師馬上追問變化題。</p><p><span className="font-bold text-gray-800">開口機制：</span>生：「我吃麵包。」 師：「好，改成『想吃』。」 生：「我想吃麵包。」 師：「改成『否定』。」 生：「我不吃麵包。」</p><div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm"><span className="font-bold text-indigo-600">🚀 接續遊戲：</span>「大家反應很快喔！這種變化難不倒你們，那接下來的『情境角色扮演』一定更有趣！」</div></div>
+                    </div>
+                </div>
+                {navButtons}
+            </div>
+        );
+
+        const GeneralActivitiesView = ({ methods, onMethodClick, navButtons }) => (
+            <div className="animate-in slide-in-from-right duration-300 pb-12 relative min-h-screen">
+                <div className="mb-10 text-center relative z-10">
+                    <div className="inline-block p-6 bg-white rounded-xl shadow-md border-l-4 border-emerald-500 text-left max-w-3xl">
+                        <h3 className="font-bold text-lg text-emerald-800 mb-2 flex items-center gap-2"><Sparkles size={20} /> 教師心法 Note</h3>
+                        <p className="text-gray-600 leading-relaxed">這群學生上了一天班已經很累了，大腦前額葉功能下降，會更害怕「犯錯」。<br/>關鍵不是「教導」，而是<span className="font-bold text-emerald-600">「營造安全的環境」</span>。請點擊下方的卡片，查看具體的破冰與引導策略。</p>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+                    {methods.map((method) => (
+                        <div key={method.id} onClick={() => onMethodClick(method)} className="group bg-white rounded-xl shadow-lg border-2 border-transparent hover:border-emerald-400 overflow-hidden cursor-pointer flex flex-col h-full hover:-translate-y-1 transition-all duration-300">
+                            <div className="h-3 bg-emerald-500"></div>
+                            <div className="p-6 flex-grow flex flex-col items-center text-center">
+                                <div className="text-5xl mb-4 transform group-hover:scale-110 transition-transform">{method.icon}</div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-3">{method.title}</h3>
+                                <div className="flex gap-2 justify-center mt-auto flex-wrap">{method.tags.map((tag, idx) => (<span key={idx} className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-medium">{tag}</span>))}</div>
+                            </div>
+                            <div className="bg-gray-50 p-3 text-center border-t border-gray-100 text-emerald-600 font-bold text-sm group-hover:bg-emerald-50 transition-colors">點擊查看教學法 →</div>
+                        </div>
+                    ))}
+                </div>
+                {navButtons}
+            </div>
+        );
+
+        // --- MAIN APP COMPONENT ---
+        const N5TeachingChecklist = () => {
+            const [currentView, setCurrentView] = useState('checklist');
+            const [checkedItems, setCheckedItems] = useState({});
+            const [selectedActivity, setSelectedActivity] = useState(null);
+            const [selectedGeneralMethod, setSelectedGeneralMethod] = useState(null);
+
+            // Toggle logic for checklist
+            const toggleItem = (categoryIndex, itemIndex) => {
+                const key = `${categoryIndex}-${itemIndex}`;
+                setCheckedItems(prev => ({ ...prev, [key]: !prev[key] }));
+            };
+
+            // Calculate progress
+            const totalItems = categories.length * 5;
+            const completedCount = Object.values(checkedItems).filter(Boolean).length;
+            const progress = Math.round((completedCount / totalItems) * 100);
+
+            // ... (rest of the component logic) ...
+
+            // 導航配置
+            const getNavConfig = (view) => {
+                switch (view) {
+                    case 'checklist':
+                        return { prev: null, next: 'activities_p1', prevLabel: '', nextLabel: '單字與漢字活動' };
+                    case 'activities_p1':
+                        return { prev: 'checklist', next: 'activities_p2', prevLabel: '授課檢核表', nextLabel: '會話與讀解活動' };
+                    case 'activities_p2':
+                        return { prev: 'activities_p1', next: 'teaching_tips', prevLabel: '單字與漢字活動', nextLabel: '枯燥習題轉化術' };
+                    case 'teaching_tips':
+                        return { prev: 'activities_p2', next: 'general_activities', prevLabel: '會話與讀解活動', nextLabel: '通用版綜合練習' };
+                    case 'general_activities':
+                        return { prev: 'teaching_tips', next: null, prevLabel: '枯燥習題轉化術', nextLabel: '' };
+                    default:
+                        return { prev: null, next: null };
+                }
+            };
+
+            const NavigationButtons = ({ position = 'bottom' }) => {
+                const { prev, next, prevLabel, nextLabel } = getNavConfig(currentView);
+                const topBtnBase = "flex items-center gap-2 px-3 py-1.5 text-sm font-bold rounded shadow transition-all border-b-4 active:border-b-0 active:translate-y-1";
+                const topPrevClass = `${topBtnBase} bg-[#e0dcd3] text-[#2d4f3c] hover:bg-white border-[#b5aca0]`;
+                const topNextClass = `${topBtnBase} bg-yellow-400 text-[#2d4f3c] hover:bg-yellow-300 border-yellow-600`;
+                const botBtnBase = "flex items-center gap-2 px-6 py-3 text-base font-bold rounded-lg shadow-lg transition-colors transform hover:-translate-y-0.5";
+                const botPrevClass = `${botBtnBase} bg-gray-500 text-white hover:bg-gray-600`;
+                const botNextClass = `${botBtnBase} bg-[#2d4f3c] text-white hover:bg-[#1a3324]`;
+
+                return (
+                    <div className={`flex items-center gap-3 ${position === 'bottom' ? 'justify-center w-full mt-10 mb-4' : ''}`}>
+                        {prev && (
+                            <button onClick={() => setCurrentView(prev)} className={position === 'top' ? topPrevClass : botPrevClass}>
+                                <ArrowLeft size={position === 'top' ? 14 : 20} />
+                                {position === 'bottom' && '上一頁：'}{prevLabel}
+                            </button>
+                        )}
+                        {next && (
+                            <button onClick={() => setCurrentView(next)} className={position === 'top' ? topNextClass : botNextClass}>
+                                {position === 'bottom' && '下一頁：'}{nextLabel}
+                                <ArrowRight size={position === 'top' ? 14 : 20} />
+                            </button>
+                        )}
+                    </div>
+                );
+            };
+
+            const handleCardClick = (act) => setSelectedActivity(act);
+            const handleGeneralMethodClick = (method) => setSelectedGeneralMethod(method);
+            const closeModal = () => { setSelectedActivity(null); setSelectedGeneralMethod(null); };
+
+            return (
+                <div className={`min-h-screen py-8 px-4 sm:px-6 font-sans text-gray-800 ${currentView === 'general_activities' ? 'bg-[#f3f4f6] dot-pattern' : 'bg-[#f3f0e9]'}`}>
+                    <div className="max-w-7xl mx-auto">
+                        <div className="bg-[#2d4f3c] rounded-lg shadow-xl border-8 border-[#8b5a2b] p-6 mb-8 relative overflow-hidden max-w-4xl mx-auto">
+                            <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/black-scales.png')"}}></div>
+                            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 relative z-10">
+                                <div>
+                                    <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 font-serif tracking-wide flex items-center gap-3"><School className="w-8 h-8 text-yellow-400 flex-shrink-0" /> {currentView === 'checklist' ? '東大日語會話授課檢核與教室活動參考網站' : currentView === 'teaching_tips' ? '授課建議錦囊' : currentView === 'general_activities' ? '教室活動遊戲 通用版(綜合練習)' : 'N5 教室活動錦囊'}</h1>
+                                    <p className="text-gray-200 text-sm font-medium tracking-wider">{currentView === 'checklist' ? '值日生：老師 | 任務：確認每堂課的教學品質' : currentView === 'teaching_tips' ? '將枯燥的課本習題，轉化為有趣的互動課堂' : currentView === 'general_activities' ? '針對疲累上班族設計的 10 個教學法' : '使用投影片與網路工具，打造 10 分鐘的快樂課堂'}</p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    {currentView === 'checklist' ? (
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-right bg-white/10 p-2 px-3 rounded-lg backdrop-blur-sm border border-white/20">
+                                                <div className="text-xs font-semibold text-yellow-300 uppercase tracking-wider mb-1">課堂活潑度</div>
+                                                <div className="text-2xl font-bold text-white font-mono">{progress}%</div>
+                                            </div>
+                                            <NavigationButtons position="top" />
+                                        </div>
+                                    ) : (
+                                        <NavigationButtons position="top" />
+                                    )}
+                                </div>
+                            </div>
+                            {currentView === 'checklist' && (
+                                <div className="mt-6 w-full bg-white/20 rounded-full h-3 overflow-hidden border border-white/30">
+                                    <div className="bg-yellow-400 h-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(250,204,21,0.6)]" style={{ width: `${progress}%` }}></div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className={`${currentView !== 'general_activities' ? 'max-w-4xl mx-auto' : ''}`}>
+                            {currentView === 'checklist' && <ChecklistView categories={categories} checkedItems={checkedItems} toggleItem={toggleItem} setCurrentView={setCurrentView} />}
+                            {currentView === 'activities_p1' && <ActivitiesView data={activitiesDataP1} onCardClick={handleCardClick} navButtons={<NavigationButtons position="bottom" />} />}
+                            {currentView === 'activities_p2' && <ActivitiesView data={activitiesDataP2} onCardClick={handleCardClick} navButtons={<NavigationButtons position="bottom" />} />}
+                            {currentView === 'teaching_tips' && <TeachingTipsView navButtons={<NavigationButtons position="bottom" />} />}
+                            {currentView === 'general_activities' && <GeneralActivitiesView methods={generalMethods} onMethodClick={handleGeneralMethodClick} navButtons={<NavigationButtons position="bottom" />} />}
+                        </div>
+
+                        {selectedActivity && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                                <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto relative animate-in zoom-in-95 duration-200 border-t-8 border-amber-500">
+                                    <button onClick={closeModal} className="absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors z-10"><X size={20} className="text-gray-600" /></button>
+                                    <div className="p-8">
+                                        <div className="flex flex-col items-center mb-6 text-center">
+                                            <div className="text-6xl mb-4 animate-bounce" style={{ animationDuration: '3s' }}>{selectedActivity.emoji}</div>
+                                            <h2 className="text-3xl font-bold text-gray-800 mb-2">{selectedActivity.name}</h2>
+                                            <div className="flex gap-2 justify-center">
+                                                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-bold flex items-center"><Clock size={14} className="mr-1" /> {selectedActivity.time}</span>
+                                                {selectedActivity.grouping && <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-bold flex items-center"><Users2 size={14} className="mr-1" /> {selectedActivity.grouping.split(' ')[0]}</span>}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-6">
+                                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100"><h4 className="flex items-center text-sm font-bold text-gray-500 uppercase tracking-wider mb-3"><Users2 size={16} className="mr-2" /> 分組與人數建議</h4><p className="text-gray-700 font-medium ml-6">{selectedActivity.groupSize || "視班級人數調整"}</p></div>
+                                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100"><h4 className="flex items-center text-sm font-bold text-gray-500 uppercase tracking-wider mb-3"><Box size={16} className="mr-2" /> 需準備材料</h4><p className="text-gray-700 font-medium ml-6">{selectedActivity.materials || "無特殊材料"}</p></div>
+                                            <div>
+                                                <h4 className="flex items-center text-sm font-bold text-gray-500 uppercase tracking-wider mb-3"><List size={16} className="mr-2" /> 實施細節</h4>
+                                                <div className="bg-amber-50/50 rounded-xl p-5 border border-amber-100">
+                                                    <ol className="list-decimal space-y-3 ml-4 text-gray-700">{selectedActivity.steps?.map((step, i) => (<li key={i} className="pl-2 marker:font-bold marker:text-amber-600">{step}</li>)) || <li>暫無步驟</li>}</ol>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="mt-8 pt-6 border-t border-gray-100 flex justify-center">
+                                            <button onClick={closeModal} className="px-8 py-3 bg-gray-800 text-white font-bold rounded-lg hover:bg-gray-900 transition-colors shadow-lg hover:shadow-xl active:scale-95 transform duration-150">關閉視窗</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {selectedGeneralMethod && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col transform scale-100 transition-transform duration-300 animate-in zoom-in-95">
+                                    <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-emerald-50 rounded-t-2xl">
+                                        <div>
+                                            <div className="flex gap-2 mb-2">{selectedGeneralMethod.tags?.map((tag, idx) => (<span key={idx} className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">{tag}</span>))}</div>
+                                            <h2 className="text-2xl font-bold text-gray-800 jp-font">{selectedGeneralMethod.title}</h2>
+                                        </div>
+                                        <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-emerald-100 rounded-full transition-colors"><X size={24} /></button>
+                                    </div>
+                                    <div className="p-6 overflow-y-auto modal-content space-y-6">
+                                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100"><h3 className="text-blue-800 font-bold flex items-center gap-2 mb-2"><RocketIcon /> 實施細節</h3><p className="text-gray-700 leading-relaxed">{selectedGeneralMethod.detail}</p></div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="bg-amber-50 p-4 rounded-xl border border-amber-100"><h3 className="text-amber-800 font-bold flex items-center gap-2 mb-2"><BoxIcon /> 準備物品</h3><p className="text-gray-700">{selectedGeneralMethod.items}</p></div>
+                                            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100"><h3 className="text-purple-800 font-bold flex items-center gap-2 mb-2"><GroupIcon /> 分組模式</h3><p className="text-gray-700">{selectedGeneralMethod.grouping}</p></div>
+                                        </div>
+                                        <div className="bg-gray-800 text-gray-100 p-5 rounded-xl border border-gray-700 shadow-inner relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 p-2 opacity-10 text-6xl">🗣️</div>
+                                            <h3 className="text-emerald-400 font-bold flex items-center gap-2 mb-3 border-b border-gray-600 pb-2">老師該說什麼</h3>
+                                            <div className="jp-font text-lg space-y-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: selectedGeneralMethod.script }} />
+                                        </div>
+                                    </div>
+                                    <div className="p-4 border-t border-gray-100 text-center bg-gray-50 rounded-b-2xl">
+                                        <button onClick={closeModal} className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium shadow-md">關閉並回到教室</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<N5TeachingChecklist />);
+    </script>
+</body>
+</html>
